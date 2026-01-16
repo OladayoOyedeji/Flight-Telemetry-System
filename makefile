@@ -42,6 +42,7 @@ SRCS  = $(MAIN_SRC) \
         $(KERNEL_DIR)/portable/GCC/ARM_CM3/port.c
 
 SRCS  += drivers/uart.c
+SRCS  += src/telemetry_tasks.c
 
 CFLAGS += -Idrivers
 # --- Object File Logic ---
