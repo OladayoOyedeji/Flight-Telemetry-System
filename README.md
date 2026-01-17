@@ -25,7 +25,7 @@ This project implements a real-time "Satellite-on-a-Chip" architecture using **F
 ## Reliability & Data Integrity
 The system is designed with a "Safety-First" mindset:
 1. **Watchdog Timer:** If a task enters an infinite loop (e.g., via the `k` chaos command), the Watchdog initiates a fail-safe reboot within 3000ms.
-2. **CRC-16 Validation:** Before downlinking, the Telemetry task calculates a checksum of the struct. This ensures that only uncorrupted data is processed—a requirement for noisy space-to-ground links.
+2. **CRC-16 Validation:** Before downlinking, the Telemetry task calculates a checksum of the struct. This ensures that only uncorrupted data is processed, a requirement for noisy space-to-ground links.
 3. **Resource Guarding:** All shared hardware (UART) is protected by Mutexes to prevent race conditions.
 
 ## Technical Stack
