@@ -245,3 +245,26 @@ void vEnvironmentTask(void *pvParameters) {
         }
     }
 }
+
+void exit_qemu(void) {
+    // Semihosting call to exit QEMU
+    // r0: ADP_Stopped_ApplicationExit (0x20026)
+    // r1: Exit code (0 for success)
+    __asm__ volatile (
+        "mov r0, #0x18\n"       // SYS_EXIT
+        "ldr r1, =0x20026\n"    // ADP_Stopped_ApplicationExit
+        "bkpt 0xab\n"           // Semi-hosting breakpoint
+    );
+}
+
+void run_unit_tests()
+{
+    TelemetryPacket p = create_packet(25.5, 1013.2); 
+    if (p.checksum == expected_val) {
+        printf("UNIT_TEST_PASS: CHECKSUM_OK\n");
+    } else {
+        printf("UNIT_TEST_FAIL: CHECKSUM_MISMATCH\n");
+    }
+    // Exit QEMU
+    exit_qemu(); 
+}

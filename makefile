@@ -71,5 +71,10 @@ $(BUILD_DIR)/%.o: %.c
 clean:
 	rm -rf $(BUILD_DIR)
 
+test: CFLAGS += -DCI_TEST_MODE
+test: all
+	@echo "Running Tests in QEMU..."
+	qemu-system-arm -machine lm3s6965evb -nographic -kernel $(BUILD_DIR)/telemetry.elf | grep "UNIT_TEST_PASS"
+
 run: $(BUILD_DIR)/telemetry.elf
 	qemu-system-arm -machine lm3s6965evb -nographic -kernel $<

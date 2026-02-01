@@ -38,5 +38,7 @@ void vWatchdogTask(void *pvParameters);
 void vCommandTask(void *pvParameters);
 void vBatteryTask(void *pvParameters);
 void vEnvironmentTask(void *pvParameters);
-
+#ifdef CI_TEST_MODE
+void exit_qemu(void);
+void run_unit_tests();
 #endif

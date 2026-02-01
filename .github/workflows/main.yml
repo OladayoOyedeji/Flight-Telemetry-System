@@ -1,0 +1,38 @@
+name: Aerospace Telemetry CI
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive # Important if FreeRTOS is a submodule
+
+      - name: Install ARM Toolchain
+            run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi qemu-system-arm
+
+      - name: Compile Firmware
+        run: make
+
+      - name: Run Unit Tests (QEMU)
+      run: |
+          qemu-system-arm -machine lm3s6965evb -nographic -semihosting -kernel build/telemetry.elf | tee test_output.log
+          
+          # Check if the output contains our success string
+          if grep -q "UNIT_TEST_PASS" test_output.log; then
+            echo "Tests Passed Successfully"
+          else
+            echo "Tests Failed or QEMU crashed"
+            exit 1
+          fi
+      - name: System Integration Test (QEMU)
+        run: |
+          # Run QEMU for 5 seconds to ensure it doesn't crash on boot
+          timeout 5s qemu-system-arm -machine lm3s6965evb -nographic -kernel build/telemetry.elf || code=$?; 
+          if [ $code -eq 124 ]; then echo "Boot successful"; else exit 1; fi
