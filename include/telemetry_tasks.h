@@ -42,3 +42,4 @@ void vEnvironmentTask(void *pvParameters);
 void exit_qemu(void);
 void run_unit_tests();
 #endif
+#endif

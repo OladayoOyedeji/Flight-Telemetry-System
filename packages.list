@@ -1,0 +1,4 @@
+gcc-arm-none-eabi-cs
+arm-none-eabi-binutils-cs
+arm-none-eabi-newlib
+qemu-system-arm
