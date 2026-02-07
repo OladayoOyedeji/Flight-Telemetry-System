@@ -1,4 +1,3 @@
-
 #include "telemetry_tasks.h"
 
 int main(void) {
@@ -20,25 +19,56 @@ int main(void) {
     return 0;
 }
 
-void vAssertCalled(const char * pcFile, uint32_t ulLine) {
+void vAssertCalled(const char * pcFile, uint32_t ulLine)
+{
     safe_uart_print("ASSERT FAIL! File: ");
     safe_uart_print(pcFile);
     while(1);
 }
 
-void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName) { (void)xTask; (void)pcTaskName; while(1); }
-void vApplicationTickHook(void) {}
-void vApplicationIdleHook(void) {}
-void vApplicationMallocFailedHook(void) { while(1); }
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
+{
+    (void)xTask;
+    (void)pcTaskName;
+    while(1);
+}
+void vApplicationTickHook(void)
+{}
+void vApplicationIdleHook(void)
+{}
+void vApplicationMallocFailedHook(void)
+{
+    while(1);
+}
 
-void Timer0IntHandler(void) { while(1); }
-void vT2InterruptHandler(void) { while(1); }
-void vT3InterruptHandler(void) { while(1); }
-void NmiSR(void) { while(1); }
-void FaultISR(void) { safe_uart_print("FAULT!\n"); while(1); }
-void IntDefaultHandler(void) { while(1); }
+void Timer0IntHandler(void)
+{
+    while(1);
+}
+void vT2InterruptHandler(void)
+{
+    while(1);
+}
+void vT3InterruptHandler(void)
+{
+    while(1);
+}
+void NmiSR(void)
+{
 
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize ) {
+    while(1);
+}
+void FaultISR(void) {
+    safe_uart_print("FAULT!\n");
+    while(1);
+}
+void IntDefaultHandler(void)
+{
+    while(1);
+}
+
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize )
+{
     static StaticTask_t xIdleTaskTCB;
     static StackType_t uxIdleTaskStack[ configMINIMAL_STACK_SIZE ];
     *ppxIdleTaskTCBBuffer = &xIdleTaskTCB;

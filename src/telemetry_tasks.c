@@ -24,7 +24,7 @@ void safe_uart_print(const char *pcString) {
     }
 }
 
-// 4. Satellite Logic
+// Satellite Logic
 void vTelemetryTask(void *pvParameters) {
     TelemetryData_t receivedData;
     char buffer[128]; // Temporary space to build our string
@@ -68,13 +68,16 @@ void vTelemetryTask(void *pvParameters) {
 // --- New Sensor Simulation Task ---
 void vSensorTask(void *pvParameters) {
     TelemetryData_t sensorUpdate;
-    for(;;) {
-        if (sensor_fail_trigger) {
+    for(;;)
+    {
+        if (sensor_fail_trigger)
+        {
             safe_uart_print("Sensor Task: I'm stuck in an infinite loop!\n");
             while(1); // Task is now dead to the scheduler
         }
         // Simulate "Reading" sensors
-        if (xTelemetryQueue != NULL) {
+        if (xTelemetryQueue != NULL)
+        {
             sensorUpdate.temperature = g_temperature;
             sensorUpdate.battery_level = g_battery_level;
             sensorUpdate.timestamp = xTaskGetTickCount();
@@ -82,7 +85,8 @@ void vSensorTask(void *pvParameters) {
             // Send data to the queue (wait 0 ticks if full)
             xQueueSend(xTelemetryQueue, &sensorUpdate, 0);
         }
-        if (g_temperature < 5 && !g_heater_on) {
+        if (g_temperature < 5 && !g_heater_on)
+        {
             g_heater_on = true;
             safe_uart_print("[AUTO] Low Temp Detected! Turning on Heater.\n");
         }
@@ -96,13 +100,16 @@ void vWatchdogTask(void *pvParameters) {
         // Wait 3 seconds before checking
         vTaskDelay(pdMS_TO_TICKS(3000));
 
-        if (sensor_checkin && telemetry_checkin) {
+        if (sensor_checkin && telemetry_checkin)
+        {
             safe_uart_print("WATCHDOG: All tasks healthy.\n");
             
             // Clear flags for the next round
             sensor_checkin = 0;
             telemetry_checkin = 0;
-        } else {
+        }
+        else
+        {
             safe_uart_print("\n!!! WATCHDOG FAILURE DETECTED !!!\n");
             if (!sensor_checkin) safe_uart_print(" - Sensor Task HUNG\n");
             if (!telemetry_checkin) safe_uart_print(" - Telemetry Task HUNG\n");
@@ -129,13 +136,12 @@ void vCommandTask(void *pvParameters) {
             case ('r'):
             {
                 safe_uart_print("\n[COMMAND] Resetting Telemetry Stream...\n");
-                // You could clear the queue here if you wanted!
+
                 xQueueReset(xTelemetryQueue);
-                // 2. Reset the failure flags so the Watchdog stops panicking
+                
                 sensor_fail_trigger = 0;
                 sensor_checkin = 1; // Force a "good" check-in
 
-                // 3. Optional: Reset physics if the error was power-related
                 g_battery_level = 100;
                 
                 safe_uart_print("[SYSTEM] Queue cleared. Sensors normalized.\n");
