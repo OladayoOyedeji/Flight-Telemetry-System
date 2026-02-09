@@ -14,9 +14,11 @@ volatile int32_t g_temperature = 25;
 volatile bool g_in_sunlight = true;
 volatile bool g_heater_on = false;
 
-void safe_uart_print(const char *pcString) {
+void safe_uart_print(const char *pcString)
+{
     // Wait forever for the Mutex to become available
-    if (xSemaphoreTake(xUartMutex, portMAX_DELAY) == pdPASS) {
+    if (xSemaphoreTake(xUartMutex, portMAX_DELAY) == pdPASS)
+    {
         uart_print(pcString);
         
         // Give the Mutex back so other tasks can print
@@ -25,7 +27,8 @@ void safe_uart_print(const char *pcString) {
 }
 
 // Satellite Logic
-void vTelemetryTask(void *pvParameters) {
+void vTelemetryTask(void *pvParameters)
+{
     TelemetryData_t receivedData;
     char buffer[128]; // Temporary space to build our string
     
@@ -66,7 +69,8 @@ void vTelemetryTask(void *pvParameters) {
 }
 
 // --- New Sensor Simulation Task ---
-void vSensorTask(void *pvParameters) {
+void vSensorTask(void *pvParameters) 
+{
     TelemetryData_t sensorUpdate;
     for(;;)
     {
@@ -158,7 +162,9 @@ void vCommandTask(void *pvParameters) {
                 g_heater_on = !g_heater_on;
                 if (g_heater_on) {
                     safe_uart_print("\n[COMMAND] Heater ACTIVATED. Power consumption increased.\n");
-                } else {
+                }
+                else
+                {
                     safe_uart_print("\n[COMMAND] Heater DEACTIVATED.\n");
                 }
                 break;
@@ -192,19 +198,23 @@ void vCommandTask(void *pvParameters) {
 }
 
 void vBatteryTask(void *pvParameters) {
-    for(;;) {
+    for(;;)
+        {
         // Drain 1% every 5 seconds
         vTaskDelay(pdMS_TO_TICKS(5000));
         
-        if (g_battery_level > 0) {
+        if (g_battery_level > 0)
+        {
             g_battery_level--;
         }
 
         // Logic for "Low Power"
-        if (g_battery_level < 10 && g_battery_level > 0) {
+        if (g_battery_level < 10 && g_battery_level > 0)
+        {
             safe_uart_print("\n!!! [POWER] CRITICAL BATTERY LOW !!!\n");
         } 
-        else if (g_battery_level <= 0) {
+        else if (g_battery_level <= 0)
+        {
             safe_uart_print("\n[FATAL] Power Lost. Satellite De-orbiting...\n");
             vTaskSuspendAll(); // FreeRTOS command to stop everything
             while(1); 
@@ -220,7 +230,8 @@ void vEnvironmentTask(void *pvParameters) {
         seconds_in_current_state++;
 
         // Orbit Logic: Switch between Sun and Shadow every 20 seconds
-        if (seconds_in_current_state >= 20) {
+        if (seconds_in_current_state >= 20)
+        {
             g_in_sunlight = !g_in_sunlight;
             seconds_in_current_state = 0;
             
@@ -238,7 +249,8 @@ void vEnvironmentTask(void *pvParameters) {
         }
         else {
             // ECLIPSE LOGIC
-            if (g_heater_on) {
+            if (g_heater_on)
+            {
                 // Heater keeps us at 20 degrees, but drains 3% battery instead of 1%
                 if (g_temperature < 20) g_temperature++; 
                 g_battery_level -= 3;
@@ -252,7 +264,8 @@ void vEnvironmentTask(void *pvParameters) {
     }
 }
 
-void exit_qemu(void) {
+void exit_qemu(void)
+{
     // Semihosting call to exit QEMU
     // r0: ADP_Stopped_ApplicationExit (0x20026)
     // r1: Exit code (0 for success)
