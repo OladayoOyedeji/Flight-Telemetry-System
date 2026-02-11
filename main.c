@@ -2,7 +2,8 @@
 
 int main(void) {
     xUartMutex = xSemaphoreCreateMutex();
-    if (xUartMutex == NULL) {
+    if (xUartMutex == NULL)
+    {
         // Handle error: not enough heap memory
         while(1);
     }

@@ -18,3 +18,27 @@ char uart_getc(void) {
     }
     return 0;
 }
+
+/* // Send a single byte */
+/* void send_uart_byte(uint8_t data) */
+/* { */
+/*     if (xSemaphoreTake(xUARTMutex, portMAX_DELAY) == pdPASS) { */
+/*         // Stellaris/QEMU specific: Put char in UART0 */
+/*         // Replace with your specific chip's UART put function */
+/*         UARTCharPut(UART0_BASE, data);  */
+/*         xSemaphoreGive(xUARTMutex); */
+/*     } */
+/* } */
+
+/* // Send a block of raw memory (like a struct or a checksum) */
+/* void send_uart_raw(uint8_t *data, uint16_t length) */
+/* { */
+/*     if (xSemaphoreTake(xUARTMutex, portMAX_DELAY) == pdPASS) */
+/*     { */
+/*         for (uint16_t i = 0; i < length; i++) */
+/*         { */
+/*             UARTCharPut(UART0_BASE, data[i]); */
+/*         } */
+/*         xSemaphoreGive(xUARTMutex); */
+/*     } */
+/* } */

@@ -14,9 +14,23 @@ volatile int32_t g_temperature = 25;
 volatile bool g_in_sunlight = true;
 volatile bool g_heater_on = false;
 
-void safe_uart_print(const char *pcString) {
+#define SYSRESETREQ_MASK    0x04
+#define VECTKEY_MASK        0x05FA0000
+#define AIRCR_REG           (*(volatile uint32_t*)(0xE000ED0C))
+
+void trigger_revival(void) {
+    // We write the "Key" (0x05FA) and the reset request bit (bit 2)
+    AIRCR_REG = VECTKEY_MASK | SYSRESETREQ_MASK;
+    
+    // The CPU will reset before it ever gets to this line
+    while(1); 
+}
+
+void safe_uart_print(const char *pcString)
+{
     // Wait forever for the Mutex to become available
-    if (xSemaphoreTake(xUartMutex, portMAX_DELAY) == pdPASS) {
+    if (xSemaphoreTake(xUartMutex, portMAX_DELAY) == pdPASS)
+    {
         uart_print(pcString);
         
         // Give the Mutex back so other tasks can print
@@ -24,12 +38,35 @@ void safe_uart_print(const char *pcString) {
     }
 }
 
+uint16_t calculate_crc16(const uint8_t * data, uint16_t length)
+{
+    uint16_t crc = 0xFFFF;
+    for (uint16_t i = 0; i < length; ++i)
+    {
+        crc ^= (uint16_t)data[i] << 8;
+        for (uint8_t j = 0; j < 8; ++j)
+        {
+            if (crc & 0x8000)
+            {
+                crc = (crc << 1) ^ 0x1021;
+            }
+            else
+            {
+                crc <<= 1;
+            }
+        }
+    }
+    return crc;
+}
+
 // Satellite Logic
-void vTelemetryTask(void *pvParameters) {
+void vTelemetryTask(void *pvParameters)
+{
     TelemetryData_t receivedData;
     char buffer[128]; // Temporary space to build our string
     
-    for(;;) {
+    for(;;)
+    {
         // This task "blocks" (sleeps) until the sensor task sends something
         if(xQueueReceive(xTelemetryQueue, &receivedData, portMAX_DELAY))
         {
@@ -43,6 +80,12 @@ void vTelemetryTask(void *pvParameters) {
             
             safe_uart_print(buffer);
             // Logic Check: Did we get what we expected?
+            uint16_t checksum = calculate_crc16((uint8_t*)&receivedData, sizeof(receivedData));
+            
+            /* send_uart_byte(0xAA);  */
+            /* send_uart_byte(0x55); */
+            /* send_uart_raw((uint8_t*)&currentData, sizeof(currentData)); */
+            /* send_uart_raw((uint8_t*)&checksum, 2); */
             if (receivedData.battery_level <= 20)
             {
                 safe_uart_print("Status: WARNING - LOW POWER\n");
@@ -66,7 +109,8 @@ void vTelemetryTask(void *pvParameters) {
 }
 
 // --- New Sensor Simulation Task ---
-void vSensorTask(void *pvParameters) {
+void vSensorTask(void *pvParameters)
+{
     TelemetryData_t sensorUpdate;
     for(;;)
     {
@@ -96,7 +140,8 @@ void vSensorTask(void *pvParameters) {
 }
 
 void vWatchdogTask(void *pvParameters) {
-    for(;;) {
+    for(;;)
+    {
         // Wait 3 seconds before checking
         vTaskDelay(pdMS_TO_TICKS(3000));
 
@@ -113,17 +158,18 @@ void vWatchdogTask(void *pvParameters) {
             safe_uart_print("\n!!! WATCHDOG FAILURE DETECTED !!!\n");
             if (!sensor_checkin) safe_uart_print(" - Sensor Task HUNG\n");
             if (!telemetry_checkin) safe_uart_print(" - Telemetry Task HUNG\n");
-            
-            // In a real satellite, you'd call a hardware reset here
+
             safe_uart_print("System Rebooting...\n");
-            while(1); // Lock up to simulate a crash/reboot
+            trigger_revival();
         }
     }
 }
 
-void vCommandTask(void *pvParameters) {
+void vCommandTask(void *pvParameters)
+{
     char c;
-    for(;;) {
+    for(;;)
+    {
         c = uart_getc();
 
         switch (c)
@@ -156,9 +202,12 @@ void vCommandTask(void *pvParameters) {
             case ('h'):
             {
                 g_heater_on = !g_heater_on;
-                if (g_heater_on) {
+                if (g_heater_on)
+                {
                     safe_uart_print("\n[COMMAND] Heater ACTIVATED. Power consumption increased.\n");
-                } else {
+                }
+                else
+                {
                     safe_uart_print("\n[COMMAND] Heater DEACTIVATED.\n");
                 }
                 break;
@@ -191,8 +240,10 @@ void vCommandTask(void *pvParameters) {
     }
 }
 
-void vBatteryTask(void *pvParameters) {
-    for(;;) {
+void vBatteryTask(void *pvParameters)
+{
+    for(;;)
+    {
         // Drain 1% every 5 seconds
         vTaskDelay(pdMS_TO_TICKS(5000));
         
@@ -201,44 +252,55 @@ void vBatteryTask(void *pvParameters) {
         }
 
         // Logic for "Low Power"
-        if (g_battery_level < 10 && g_battery_level > 0) {
+        if (g_battery_level < 10 && g_battery_level > 0)
+        {
             safe_uart_print("\n!!! [POWER] CRITICAL BATTERY LOW !!!\n");
         } 
-        else if (g_battery_level <= 0) {
+        else if (g_battery_level <= 0)
+        {
             safe_uart_print("\n[FATAL] Power Lost. Satellite De-orbiting...\n");
             vTaskSuspendAll(); // FreeRTOS command to stop everything
-            while(1); 
+            while(1);
         }
     }
 }
 
-void vEnvironmentTask(void *pvParameters) {
+void vEnvironmentTask(void *pvParameters)
+{
     uint32_t seconds_in_current_state = 0;
 
-    for(;;) {
+    for(;;)
+    {
         vTaskDelay(pdMS_TO_TICKS(1000)); // Run every 1 second
         seconds_in_current_state++;
 
         // Orbit Logic: Switch between Sun and Shadow every 20 seconds
-        if (seconds_in_current_state >= 20) {
+        if (seconds_in_current_state >= 20)
+        {
             g_in_sunlight = !g_in_sunlight;
             seconds_in_current_state = 0;
             
-            if (g_in_sunlight) {
+            if (g_in_sunlight)
+            {
                 safe_uart_print("\n[ENV] >>> Emerged into Sunlight (Charging...)\n");
-            } else {
+            }
+            else
+            {
                 safe_uart_print("\n[ENV] >>> Entered Eclipse (Battery Drain Only)\n");
             }
         }
 
         // Physics Logic
-        if (g_in_sunlight) {
+        if (g_in_sunlight)
+        {
             if (g_temperature < 80) g_temperature++; // Heat up in sun
             if (g_battery_level < 100) g_battery_level++; // Charge battery
         }
-        else {
+        else
+        {
             // ECLIPSE LOGIC
-            if (g_heater_on) {
+            if (g_heater_on)
+            {
                 // Heater keeps us at 20 degrees, but drains 3% battery instead of 1%
                 if (g_temperature < 20) g_temperature++; 
                 g_battery_level -= 3;
