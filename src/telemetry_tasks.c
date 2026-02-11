@@ -247,7 +247,8 @@ void vBatteryTask(void *pvParameters)
         // Drain 1% every 5 seconds
         vTaskDelay(pdMS_TO_TICKS(5000));
         
-        if (g_battery_level > 0) {
+        if (g_battery_level > 0)
+        {
             g_battery_level--;
         }
 
@@ -314,7 +315,8 @@ void vEnvironmentTask(void *pvParameters)
     }
 }
 
-void exit_qemu(void) {
+void exit_qemu(void)
+{
     // Semihosting call to exit QEMU
     // r0: ADP_Stopped_ApplicationExit (0x20026)
     // r1: Exit code (0 for success)
